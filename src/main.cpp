@@ -120,6 +120,7 @@ bool processArguments(int argc, char** argv)
 {
 	struct option longOptions[] = {{"help", no_argument, nullptr, 'h'}, {nullptr, 0, nullptr, 0}};
 
+	opterr = 0;
 	int opt = -1;
 	while ((opt = getopt_long(argc, argv, "h", longOptions, nullptr)) != -1)
 	{
