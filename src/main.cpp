@@ -1,5 +1,7 @@
 #include "simplemath.h"
 
+#include <getopt.h>
+
 #include <cstdlib>
 #include <iostream>
 
@@ -10,6 +12,7 @@ enum class CalculatorErrorType
 	EC_INVALIDNUMBER,
 	EC_INVALIDOPERATION,
 	EC_ARGUMENTOVERFLOW,
+	EC_UNKNOWNERROR,
 
 	EC_MATH_OVERFLOW,
 	EC_MATH_DIVIDEBYZERO,
@@ -42,7 +45,7 @@ CalculatorErrorType convertMathError(SimpleMath::SimpleMathError error)
 			return CalculatorErrorType::EC_MATH_NEGATIVEFACTORIALARGUMENT;
 
 		default:
-			return CalculatorErrorType::EC_NONE;
+			return CalculatorErrorType::EC_UNKNOWNERROR;
 	}
 }
 
@@ -53,16 +56,16 @@ void printResult(const Task& task)
 		switch (task.errorType)
 		{
 			case CalculatorErrorType::EC_NOTENOUGHARGUMENTS:
-				printf("Error: Not enough arguments. Usage example: 10 + 24\n");
+				printf("Error: Not enough arguments. Use --help or -h for usage information.\n");
 				return;
 			case CalculatorErrorType::EC_INVALIDNUMBER:
-				printf("Error: Invalid number format. Usage example: 10 + 24\n");
+				printf("Error: Invalid number format. Use --help or -h for usage information.\n");
 				return;
 			case CalculatorErrorType::EC_INVALIDOPERATION:
-				printf("Error: Invalid or unknown operation. Available operations: | + | - | x | / | ^ | N! |\n");
+				printf("Error: Invalid or unknown operation. Use --help or -h for usage information.\n");
 				return;
 			case CalculatorErrorType::EC_ARGUMENTOVERFLOW:
-				printf("Error: Argument value is out of range.\n");
+				printf("Error: Argument value is out of range. Use --help or -h for usage information.\n");
 				return;
 			case CalculatorErrorType::EC_MATH_OVERFLOW:
 				printf("Math Error: Calculation result overflowed.\n");
@@ -111,6 +114,36 @@ int getNumber(char** argv, int index, CalculatorErrorType& error, bool* isFactor
 	}
 
 	return static_cast<int>(value);
+}
+
+bool processArguments(int argc, char** argv)
+{
+	struct option longOptions[] = {{"help", no_argument, nullptr, 'h'}, {nullptr, 0, nullptr, 0}};
+
+	int opt = -1;
+	while ((opt = getopt_long(argc, argv, "h", longOptions, nullptr)) != -1)
+	{
+		switch (opt)
+		{
+			case 'h':
+				printf("Usage: %s <int_number1> <operation> <int_number2>\n", argv[0]);
+				printf("Factorial usage: %s <int_number1>! or %s <int_number1> !\n", argv[0], argv[0]);
+				printf("<int_number1> and <int_number2> should be valid integers within the range of int type.\n");
+				printf("Result will be displayed as an integer.\n");
+				printf("Available operations:\n"
+					   "+ -- Add\n"
+					   "- -- Subtract\n"
+					   "x -- Multiply\n"
+					   "/ -- Divide\n"
+					   "^ -- Power\n"
+					   "N! -- Factorial\n");
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	return false;
 }
 
 bool makeTask(int argc, char** argv, Task& task)
@@ -209,6 +242,11 @@ void makeCalculate(Task& task)
 
 int applicationRun(int argc, char** argv)
 {
+	if (processArguments(argc, argv))
+	{
+		return 0;
+	}
+
 	Task task;
 	if (!makeTask(argc, argv, task))
 	{

@@ -16,6 +16,8 @@ add_executable(${PROJECT_NAME}
 	src/main.cpp
 )
 
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE SimpleMath)
 
 set_target_properties(${PROJECT_NAME}
