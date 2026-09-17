@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 int Application::run(int argc, char** argv)
 {
 	if (!logger_)
-		printf("[WARN] logger was not found! Using standart output...");
+		printf("[WARN] logger was not found! Using standard output...\n");
 
 	if (processArguments(argc, argv))
 		return 0;
@@ -67,6 +67,7 @@ bool Application::processArguments(int argc, char** argv)
 {
 	struct option longOptions[] = {{"help", no_argument, nullptr, 'h'}, {nullptr, 0, nullptr, 0}};
 
+	optind = 1;
 	opterr = 0;
 	int opt = -1;
 	while ((opt = getopt_long(argc, argv, "h", longOptions, nullptr)) != -1)
