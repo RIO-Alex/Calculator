@@ -54,8 +54,13 @@ int Application::run(int argc, char** argv)
 			task_.errorType = Application::CalculatorErrorType::EC_UNKNOWNERROR;
 	}
 
+	// 0 if all is ok, else - 1
+	int result = 0;
+	if (task_.errorType != Application::CalculatorErrorType::EC_NONE)
+		result = 1;
+
 	printResult();
-	return 0;
+	return result;
 }
 
 bool Application::processArguments(int argc, char** argv)
@@ -184,7 +189,7 @@ void Application::printResult()
 		}
 	}
 
-	printf("Result: %i\n", task_.result);
+	printLog("info", "Result: " + std::to_string(task_.result));
 }
 
 void Application::printLog(const std::string& level, const std::string& message)
