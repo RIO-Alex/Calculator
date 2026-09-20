@@ -190,7 +190,16 @@ void Application::printResult()
 		}
 	}
 
-	printLog("info", "Result: " + std::to_string(task_.result));
+	// also we can use fmt lib or std::format() is we use C++20
+	std::ostringstream os;
+	if (task_.operation == '!')
+		os << task_.first << task_.operation;
+	else
+		os << task_.first << ' ' << task_.operation << ' ' << task_.second;
+
+	os << " = " << task_.result;
+
+	printLog("info", os.str());
 }
 
 void Application::printLog(const std::string& level, const std::string& message)
