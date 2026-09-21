@@ -20,7 +20,7 @@ class MockLogger : public ILogger
 TEST(CalculatorTests, SuccessfullOperation)
 {
     MockLogger logger;
-    EXPECT_CALL(logger, info("Result: 3")).Times(1);
+    EXPECT_CALL(logger, info("1 + 2 = 3")).Times(1);
 
     Application app(&logger);
     char arg0[] = "calculator";
@@ -35,7 +35,7 @@ TEST(CalculatorTests, SuccessfullOperation)
 TEST(CalculatorTests, SuccessfullOperationWithFile)
 {
     MockLogger logger;
-    EXPECT_CALL(logger, info("Result: 5")).Times(1);
+    EXPECT_CALL(logger, info("10 / 2 = 5")).Times(1);
 
     Application app(&logger);
     char arg0[] = "calculator";
@@ -50,7 +50,7 @@ TEST(CalculatorTests, SuccessfullOperationWithFile)
 TEST(CalculatorTests, SuccessfullFactorialOperation)
 {
     MockLogger logger;
-    EXPECT_CALL(logger, info("Result: 120")).Times(1);
+    EXPECT_CALL(logger, info("5! = 120")).Times(1);
 
     Application app(&logger);
     char arg0[] = "calculator";
