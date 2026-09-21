@@ -10,17 +10,74 @@ FetchContent_Declare(
 	GIT_TAG main
 )
 
+FetchContent_Declare(
+	json
+	GIT_REPOSITORY https://github.com/nlohmann/json
+	GIT_TAG v3.11.3
+	GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+	spdlog
+	GIT_REPOSITORY https://github.com/gabime/spdlog
+	GIT_TAG v1.17.0
+	GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+	googletest
+	GIT_REPOSITORY https://github.com/google/googletest
+	GIT_TAG v1.18.0
+	GIT_SHALLOW TRUE
+)
+
 FetchContent_MakeAvailable(SimpleMath)
+FetchContent_MakeAvailable(json)
+FetchContent_MakeAvailable(spdlog)
+FetchContent_MakeAvailable(googletest)
+
+# Main App
 
 add_executable(${PROJECT_NAME} 
 	src/main.cpp
+	src/Application.cpp
+	src/CalculatorLogger.cpp
 )
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE SimpleMath)
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    SimpleMath
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+)
 
 set_target_properties(${PROJECT_NAME}
+	PROPERTIES
+		CXX_STANDARD 17
+		CXX_STANDARD_REQUIRED ON
+)
+
+# Tests
+
+add_executable(calculator_tests
+	tests/CalculatorTests.cpp
+	src/Application.cpp
+	src/CalculatorLogger.cpp
+)
+
+target_link_libraries(calculator_tests PRIVATE 
+    gmock_main
+	SimpleMath
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+)
+
+target_include_directories(calculator_tests PRIVATE
+	src
+)
+
+set_target_properties(calculator_tests
 	PROPERTIES
 		CXX_STANDARD 17
 		CXX_STANDARD_REQUIRED ON
