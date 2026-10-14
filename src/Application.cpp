@@ -44,19 +44,19 @@ int Application::run(int argc, char** argv)
 	{
 		printLog("error", std::string("Error: ") + e.what());
 
-		if (task_.errorType == Application::CalculatorErrorType::EC_NONE) // if error unknowed
-			task_.errorType = Application::CalculatorErrorType::EC_UNKNOWNERROR;
+		if (task_.errorType == CalculatorErrorType::EC_NONE) // if error unknowed
+			task_.errorType = CalculatorErrorType::EC_UNKNOWNERROR;
 	}
 	catch (...)
 	{
 		printLog("error", "Unknown exception occurred.");
-		if (task_.errorType == Application::CalculatorErrorType::EC_NONE) // if error unknowed
-			task_.errorType = Application::CalculatorErrorType::EC_UNKNOWNERROR;
+		if (task_.errorType == CalculatorErrorType::EC_NONE) // if error unknowed
+			task_.errorType = CalculatorErrorType::EC_UNKNOWNERROR;
 	}
 
 	// 0 if all is ok, else - 1
 	int result = 0;
-	if (task_.errorType != Application::CalculatorErrorType::EC_NONE)
+	if (task_.errorType != CalculatorErrorType::EC_NONE)
 		result = 1;
 
 	printResult();
@@ -254,7 +254,7 @@ std::string Application::argsToJsonStr(int argc, char** argv)
 	return result;
 }
 
-Application::CalculatorErrorType Application::convertMathError(SimpleMath::SimpleMathError error)
+CalculatorErrorType Application::convertMathError(SimpleMath::SimpleMathError error)
 {
 	switch (error)
 	{
