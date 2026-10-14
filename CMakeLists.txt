@@ -130,3 +130,50 @@ if(USE_CLANG_FORMAT)
 
 	add_dependencies(${PROJECT_NAME} clang-format)
 endif()
+
+# CTest
+enable_testing()
+
+add_test(
+    NAME CalculatorTests_Success
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Success.*
+)
+
+add_test(
+    NAME CalculatorTests_Errors
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Errors.*
+)
+
+add_test(
+    NAME CalculatorTests_MathErrors
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_MathErrors.*
+)
+
+add_test(
+    NAME CalculatorTests_Database
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Database.*
+)
+
+find_program(VALGRIND_PATH valgrind)
+add_test(
+    NAME memcheck
+    COMMAND
+    ${VALGRIND_PATH}
+    --leak-check=full
+    --show-leak-kinds=all
+    --track-origins=yes
+    --errors-for-leak-kinds=definite,indirect,possible
+    --error-exitcode=1
+    $<TARGET_FILE:calculator_tests>
+)
+
+# for test with json file
+set_tests_properties(
+    CalculatorTests_Success
+    CalculatorTests_Errors
+    CalculatorTests_MathErrors
+    CalculatorTests_Database
+	memcheck
+    PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
