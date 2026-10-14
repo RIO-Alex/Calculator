@@ -50,6 +50,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     SimpleMath
     nlohmann_json::nlohmann_json
     spdlog::spdlog
+	pq
 )
 
 set_target_properties(${PROJECT_NAME}
@@ -71,6 +72,7 @@ target_link_libraries(calculator_tests PRIVATE
 	SimpleMath
     nlohmann_json::nlohmann_json
     spdlog::spdlog
+	pq
 )
 
 target_include_directories(calculator_tests PRIVATE
