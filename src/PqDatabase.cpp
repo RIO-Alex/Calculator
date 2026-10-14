@@ -1,8 +1,11 @@
 #include "PqDatabase.h"
 #include <sstream>
 
-PqDatabase::PqDatabase(const DbConfig& connectionConfig) : connection_(connect(connectionConfig)) 
+PqDatabase::PqDatabase(ILogger& logger, const DbConfig& connectionConfig) 
+                      : logger_(logger), connection_(connect(connectionConfig)) 
 {
+    PQsetNoticeProcessor(connection_.get(), &PqDatabase::processNotice, nullptr);
+
     const char* query = "CREATE TABLE IF NOT EXISTS calculations ("
                         "id BIGSERIAL PRIMARY KEY, "
                         "first_value INTEGER NOT NULL,"
@@ -50,21 +53,17 @@ void PqDatabase::warmUpCache()
             operationResult = std::stoi(PQgetvalue(result.get(), i, 3));
             errorCode = std::stoi(PQgetvalue(result.get(), i, 4));
 
-            Task task{ first, operation, second, operationResult, static_cast<CalculatorErrorType>(errorCode) };
+            Task task{ first, second, operation, operationResult, static_cast<CalculatorErrorType>(errorCode) };
             localCache[getOperationKey(task)] = task;
         }
         catch (const std::invalid_argument& e)
         {
-            if (logger_)
-                logger_->error("[PqDatabase] Invalid value in row " + std::to_string(i) + ": " + e.what());
-
+            logger_.error("[PqDatabase] Invalid value in row " + std::to_string(i) + ": " + e.what());
             continue;
         }
         catch (const std::out_of_range& e)
         {
-            if (logger_)
-                logger_->error("[PqDatabase] Value out of range in row " + std::to_string(i) + ": " + e.what());
-
+            logger_.error("[PqDatabase] Value out of range in row " + std::to_string(i) + ": " + e.what());
             continue;
         }
     }
@@ -153,10 +152,16 @@ std::string PqDatabase::getOperationKey(const Task& task)
 {
     std::stringstream ss;
 
-	if ((task.operation == '+' || task.operation == '*') && task.second < task.first)
+	if ((task.operation == '+' || task.operation == 'x') && task.second < task.first)
         ss << task.second << task.operation << task.first;
     else
         ss << task.first << task.operation << task.second;
 
     return ss.str();
+}
+
+void PqDatabase::processNotice(void* arg, const char* message)
+{
+    // here we can use logger for NOTICE messages.
+    // I added it here, because I want to hide message about "table already exists"
 }

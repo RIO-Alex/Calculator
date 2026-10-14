@@ -42,6 +42,7 @@ add_executable(${PROJECT_NAME}
 	src/main.cpp
 	src/Application.cpp
 	src/CalculatorLogger.cpp
+	src/PqDatabase.cpp
 )
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
@@ -65,6 +66,7 @@ add_executable(calculator_tests
 	tests/CalculatorTests.cpp
 	src/Application.cpp
 	src/CalculatorLogger.cpp
+	src/PqDatabase.cpp
 )
 
 target_link_libraries(calculator_tests PRIVATE 

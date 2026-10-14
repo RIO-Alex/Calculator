@@ -2,7 +2,9 @@
 
 #include "CalculatorTypes.h"
 #include "ILogger.h"
+#include "IDatabase.h"
 
+#include <memory>
 #include <string>
 
 namespace SimpleMath
@@ -14,10 +16,11 @@ class Application
 {
   private:
 	Task task_;
-	ILogger* logger_ = nullptr;
+	ILogger& logger_;
+	std::unique_ptr<IDatabase> database_;
 
   public:
-	Application(ILogger* logger = nullptr) : logger_(logger) {};
+	Application(ILogger& logger, std::unique_ptr<IDatabase> database = nullptr);
 	int run(int argc, char** argv);
 
   private:

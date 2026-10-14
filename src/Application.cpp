@@ -12,10 +12,27 @@
 
 namespace fs = std::filesystem;
 
+Application::Application(ILogger& logger, std::unique_ptr<IDatabase> database) 
+						: logger_(logger), database_(std::move(database)) 
+{
+	if (database_)
+	{
+		try
+		{
+			database_->warmUpCache();
+		}
+		catch(const std::exception& e)
+		{
+			logger_.error(std::string("Database error: ") + e.what());
+		}
+	}
+		
+}
+
 int Application::run(int argc, char** argv)
 {
-	if (!logger_)
-		printf("[WARN] logger was not found! Using standard output...\n");
+	/*if (!logger_)
+		printf("[WARN] logger was not found! Using standard output...\n");*/
 
 	if (processArguments(argc, argv))
 		return 0;
@@ -23,7 +40,37 @@ int Application::run(int argc, char** argv)
 	try
 	{
 		makeTask(argc, argv);
-		makeCalculate();
+		std::optional<Task> result = std::nullopt;
+
+		if (database_)
+		{
+			try
+			{
+				result = database_->getRecord(task_);
+			}
+			catch (const std::exception& e)
+			{
+				printLog("error", std::string("Database read error: ") + e.what());
+			}
+		}
+
+		if (result.has_value())
+			task_ = result.value();
+		else
+		{
+			makeCalculate();
+			if (database_)
+			{
+				try
+				{
+					database_->writeRecord(task_);
+				}
+				catch (const std::exception& e)
+				{
+					printLog("error", std::string("Database write error: ") + e.what());
+				}
+			}
+		}
 	}
 	catch (const nlohmann::json::parse_error& e)
 	{
@@ -204,19 +251,14 @@ void Application::printResult()
 
 void Application::printLog(const std::string& level, const std::string& message)
 {
-	if (logger_)
-	{
-		if (level == "warn")
-			logger_->warning(message);
-		else if (level == "error")
-			logger_->error(message);
-		else if (level == "debug")
-			logger_->debug(message);
-		else
-			logger_->info(message);
-	}
+	if (level == "warn")
+		logger_.warning(message);
+	else if (level == "error")
+		logger_.error(message);
+	else if (level == "debug")
+		logger_.debug(message);
 	else
-		printf("%s\n", message.c_str());
+		logger_.info(message);
 }
 
 std::string Application::argsToJsonStr(int argc, char** argv)

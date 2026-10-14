@@ -27,19 +27,19 @@ class PqDatabase : public IDatabase
     };
 
 	std::unique_ptr<PGconn, PqDeleter> connection_;
-    std::shared_ptr<ILogger> logger_;
+    ILogger& logger_;
 
   public:
     struct DbConfig
     {
-        std::string host{"localhost"};
-        unsigned int port{5432};
-        std::string username{"rio"};
-        std::string password{"riopassword10"};
-        std::string dbName{"calculator_db"};
+        std::string host = "localhost";
+        unsigned int port = 5432;
+        std::string username = "rio";
+        std::string password = "riopassword10";
+        std::string dbName = "calculator_db";
     };
 
-	PqDatabase(const DbConfig& connectionConfig = DbConfig());
+	PqDatabase(ILogger& logger, const DbConfig& connectionConfig);
 	~PqDatabase() override;
 
 	virtual void warmUpCache() override;
@@ -52,4 +52,5 @@ class PqDatabase : public IDatabase
 
     std::unique_ptr<PGconn, PqDeleter> connect(const DbConfig& config);
     std::string getOperationKey(const Task& task);
+    static void processNotice(void* arg, const char* message);
 };
