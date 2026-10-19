@@ -84,6 +84,8 @@ std::optional<Task> PqDatabase::getRecord(const Task& task)
 
 void PqDatabase::writeRecord(const Task& task)
 {
+    // Keep expensive results even if persistent storage fails.
+    cache_[getOperationKey(task)] = task;
     const char* query = "INSERT INTO calculations "
                         "(first_value, operation, second_value, result, status) "
                         "VALUES ($1, $2, $3, $4, $5);";
@@ -113,7 +115,6 @@ void PqDatabase::writeRecord(const Task& task)
         throw std::runtime_error(std::string("Failed to insert values to calculations table: ") 
                                 + PQresultErrorMessage(result.get()));
 
-    cache_[getOperationKey(task)] = task;
 }
 
 std::unique_ptr<PGconn, PqDatabase::PqDeleter> PqDatabase::connect(const DbConfig& config)
@@ -127,7 +128,7 @@ std::unique_ptr<PGconn, PqDatabase::PqDeleter> PqDatabase::connect(const DbConfi
         nullptr
     };
 
-    const std::string port = std::to_string(config.port);
+    const std::string port = config.port == 0 ? "" : std::to_string(config.port);
     const char* values[] = {
         config.host.c_str(),
         port.c_str(),
@@ -154,6 +155,8 @@ std::string PqDatabase::getOperationKey(const Task& task)
 
 	if ((task.operation == '+' || task.operation == 'x') && task.second < task.first)
         ss << task.second << task.operation << task.first;
+    else if (task.operation == '!')
+        ss << task.first << task.operation;
     else
         ss << task.first << task.operation << task.second;
 

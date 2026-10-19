@@ -93,3 +93,66 @@ calculator '{"first": 5, "operation": "!"}'
 
 # Read input from a JSON file
 calculator input.json
+
+## PostgreSQL and verification
+
+Install PostgreSQL server/client utilities, libpq development headers and Valgrind.
+Connection settings use libpq environment variables: `PGHOST`, `PGPORT`,
+`PGUSER`, `PGDATABASE`, and a password file (`~/.pgpass`) when needed.
+Create a database owned by the application user:
+
+```bash
+createdb calculator_db
+export PGDATABASE=calculator_db
+./build/calculator '{"first":2,"second":3,"operation":"+"}'
+psql -c 'TABLE calculations'
+```
+
+The table is created automatically; mathematical errors are stored too.
+If initialization fails, the application logs an error and calculates without
+persistent storage. On INSERT failure the result stays in memory; the failed
+write is not automatically retried. Cache hits preserve the request's operands.
+
+Run unit tests and real libpq operations under Valgrind:
+
+```bash
+cmake -S . -B build -DENABLE_POSTGRES_TESTS=ON
+cmake --build build -j2
+ctest --test-dir build --output-on-failure
+```
+
+Integration tests require Python 3, `pg_config`, `initdb` and `pg_ctl`, and must
+run as a non-root user. Each run creates and removes a temporary cluster with
+a private Unix socket and TCP disabled. Existing databases are not modified.
+Without the option, unit tests run independently of PostgreSQL. Valgrind checks
+are registered when Valgrind is available.
+
+For the psql video, run this disposable demonstration. It checks that swapped
+addition does not add a row and displays a persisted mathematical error:
+
+```bash
+python3 tests/run_postgres.py "$(pg_config --bindir)" \
+  bash tests/demo_database.sh "$PWD/build/calculator"
+ctest --test-dir build -R memcheck -V
+```
+
+For a Perf recording use a build with symbols and an isolated database:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_POSTGRES_TESTS=ON
+cmake --build build -j2
+python3 tests/run_postgres.py "$(pg_config --bindir)" \
+  perf record -g -o build/perf.data -- ./build/pq_database_tests --gtest_repeat=100
+perf report -i build/perf.data --stdio
+```
+
+This profile includes connections, warm-up and queries, not just arithmetic.
+Inspect their costs before drawing conclusions about caching. The environment
+must allow perf events; a permission error is not profiling evidence. Record
+the psql, Valgrind and Perf demonstrations, attach links to the homework PR,
+and request review from the mentor.
+
+All owned libpq resources (`PGconn`, `PGresult`) use RAII. Borrowed pointers
+remain at C API boundaries (`argv`, libpq arguments and callbacks); giving them
+owning smart pointers would be incorrect. No application worker threads are
+created; logging uses synchronous single-threaded sinks.

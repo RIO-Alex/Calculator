@@ -187,13 +187,13 @@ TEST(CalculatorTests_Errors, ReturnsErrorOnFirstArgumentOverflow)
 TEST(CalculatorTests_Errors, ReturnsErrorOnSecondArgumentOverflow)
 {
     MockLogger logger;
-    EXPECT_CALL(logger, error(testing::HasSubstr("First argument is out of range"))).Times(1);
+    EXPECT_CALL(logger, error(testing::HasSubstr("Second argument is out of range"))).Times(1);
     EXPECT_CALL(logger, warning("Use --help or -h for usage information.")).Times(1);
 
     Application app(logger);
     char arg0[] = "calculator";
     // 3000000000 > INT_MAX (2147483647)
-    char arg1[] = "{\"first\": 300000000000, \"second\": 1, \"operation\": \"+\"}";
+    char arg1[] = "{\"first\": 1, \"second\": 300000000000, \"operation\": \"+\"}";
     char* argv[] = { arg0, arg1 };
 
     int result = app.run(2, argv);
@@ -306,15 +306,15 @@ TEST(CalculatorTests_Database, ReturnsCachedRecord)
 
     EXPECT_CALL(*db, warmUpCache()).Times(1);
 
-    Task cachedTask{ 5, 5, '+', 10, CalculatorErrorType::EC_NONE };
+    Task cachedTask{ 2, 3, '+', 5, CalculatorErrorType::EC_NONE };
     EXPECT_CALL(*db, getRecord(testing::_)).WillOnce(testing::Return(cachedTask));
     EXPECT_CALL(*db, writeRecord(testing::_)).Times(0);
-    EXPECT_CALL(logger, info("5 + 5 = 10")).Times(1);
+    EXPECT_CALL(logger, info("3 + 2 = 5")).Times(1);
 
     Application app(logger, std::move(db));
 
     char arg0[] = "calculator";
-    char arg1[] = "{\"first\": 5, \"second\": 5, \"operation\": \"+\"}";
+    char arg1[] = "{\"first\": 3, \"second\": 2, \"operation\": \"+\"}";
     char* argv[] = { arg0, arg1 };
 
     int result = app.run(2, argv);

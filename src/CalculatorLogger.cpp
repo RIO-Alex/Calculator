@@ -14,8 +14,8 @@ CalculatorLogger::CalculatorLogger() : pImpl(std::make_unique<Impl>())
     pImpl->logger = spdlog::get("CalculatorLogger");
     if (!pImpl->logger)
     {
-        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>(); // color console
-        auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>( 
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>(); // color console
+        auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_st>(
                               "logs/calculator.log", 1024 * 1024 * 5, 5 // up to 5 files (5MB)
         );
 
@@ -24,7 +24,7 @@ CalculatorLogger::CalculatorLogger() : pImpl(std::make_unique<Impl>())
 
         spdlog::register_logger(pImpl->logger);
     }
-        
+
     pImpl->logger->set_pattern("[%Y-%m-%d %H:%M:%S] [%n] [%^%l%$]: %v");
     pImpl->logger->set_level(spdlog::level::info);
 }

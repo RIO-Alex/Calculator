@@ -32,11 +32,12 @@ class PqDatabase : public IDatabase
   public:
     struct DbConfig
     {
-        std::string host = "localhost";
-        unsigned int port = 5432;
-        std::string username = "rio";
-        std::string password = "riopassword10";
-        std::string dbName = "calculator_db";
+        // Empty values use libpq defaults and PG* environment variables.
+        std::string host;
+        unsigned int port = 0;
+        std::string username;
+        std::string password;
+        std::string dbName;
     };
 
 	PqDatabase(ILogger& logger, const DbConfig& connectionConfig);

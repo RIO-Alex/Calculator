@@ -6,6 +6,8 @@ int main(int argc, char** argv)
 {
 	auto& logger = CalculatorLogger::getInstance();
 	PqDatabase::DbConfig config;
+	config.dbName = "calculator_db";
+	config.username = "rio";
 	std::unique_ptr<IDatabase> database;
 
 	try

@@ -55,7 +55,10 @@ int Application::run(int argc, char** argv)
 		}
 
 		if (result.has_value())
-			task_ = result.value();
+		{
+			task_.result = result->result;
+			task_.errorType = result->errorType;
+		}
 		else
 		{
 			makeCalculate();

@@ -155,6 +155,7 @@ add_test(
 )
 
 find_program(VALGRIND_PATH valgrind)
+if(VALGRIND_PATH)
 add_test(
     NAME memcheck
     COMMAND
@@ -167,13 +168,41 @@ add_test(
     $<TARGET_FILE:calculator_tests>
 )
 
+endif()
+
 # for test with json file
 set_tests_properties(
     CalculatorTests_Success
     CalculatorTests_Errors
     CalculatorTests_MathErrors
     CalculatorTests_Database
-	memcheck
     PROPERTIES
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
+if(VALGRIND_PATH)
+    set_tests_properties(memcheck PROPERTIES WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endif()
+
+option(ENABLE_POSTGRES_TESTS "Run integration tests in a disposable PostgreSQL cluster" OFF)
+if(ENABLE_POSTGRES_TESTS)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    find_program(PG_CONFIG_PATH pg_config REQUIRED)
+    execute_process(COMMAND ${PG_CONFIG_PATH} --bindir OUTPUT_VARIABLE PG_BINDIR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+    find_program(INITDB_PATH initdb PATHS "${PG_BINDIR}" NO_DEFAULT_PATH REQUIRED)
+    find_program(PG_CTL_PATH pg_ctl PATHS "${PG_BINDIR}" NO_DEFAULT_PATH REQUIRED)
+    add_executable(pq_database_tests tests/PqDatabaseTests.cpp src/PqDatabase.cpp)
+    target_include_directories(pq_database_tests PRIVATE src)
+    target_link_libraries(pq_database_tests PRIVATE gtest_main pq)
+    target_compile_features(pq_database_tests PRIVATE cxx_std_17)
+    add_test(NAME PostgreSQL COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/run_postgres.py ${PG_BINDIR}
+        $<TARGET_FILE:pq_database_tests>)
+    if(VALGRIND_PATH)
+        add_test(NAME PostgreSQL_memcheck COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/tests/run_postgres.py ${PG_BINDIR}
+            ${VALGRIND_PATH} --leak-check=full --show-leak-kinds=all
+            --errors-for-leak-kinds=definite,indirect,possible --error-exitcode=1
+            $<TARGET_FILE:pq_database_tests>)
+    endif()
+endif()
