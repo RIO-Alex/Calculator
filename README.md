@@ -8,12 +8,12 @@ A simple C++ command-line calculator supporting basic arithmetic operations, exp
 
 | Operation | Description | Example |
 | :---: | :--- | :--- |
-| `+` | Addition | `calculator 5 + 3` |
-| `-` | Subtraction | `calculator 10 - 4` |
-| `x` | Multiplication | `calculator 6 x 7` |
-| `/` | Division | `calculator 20 / 4` |
-| `^` | Exponentiation | `calculator 2 ^ 8` |
-| `!` | Factorial | `calculator 5!` or `calculator 5 !` |
+| `+` | Addition | `{"first": 5, "second": 3, "operation": "+"}` |
+| `-` | Subtraction | `{"first": 10, "second": 4, "operation": "-"}` |
+| `x` | Multiplication | `{"first": 6, "second": 7, "operation": "x"}` |
+| `/` | Division | `{"first": 20, "second": 4, "operation": "/"}` |
+| `^` | Exponentiation | `{"first": 2, "second": 8, "operation": "^"}` |
+| `!` | Factorial | `{"first": 5, "operation": "!"}` |
 
 > **Note:** Multiplication uses the letter `x` to avoid shell wildcard expansion (globbing) issues with `*`.
 
@@ -22,7 +22,7 @@ A simple C++ command-line calculator supporting basic arithmetic operations, exp
 ## Prerequisites
 
 * C++17 (or newer)
-* CMake 3.20+
+* CMake 3.22+
 * C++ compiler (`g++` or `clang++`)
 * Build system (`make` / `ninja`)
 
@@ -56,7 +56,7 @@ Installing allows you to run the binary from any directory:
 sudo cmake --build build --target install
 
 # Run from anywhere
-calculator 5 x 5
+calculator '{"first": 5, "second": 3, "operation": "+"}'
 
 ```
 
@@ -75,21 +75,21 @@ cmake --build build --target install
 
 ## Examples
 
-```bash
 # Display help
 calculator --help
 calculator -h
 
-# Basic calculations
-calculator 12 + 45
-calculator 542 - 83
-calculator 12 x 15
-calculator 100 / 3
+# Basic calculations using JSON input
+calculator '{"first": 12, "second": 45, "operation": "+"}'
+calculator '{"first": 542, "second": 83, "operation": "-"}'
+calculator '{"first": 12, "second": 15, "operation": "x"}'
+calculator '{"first": 100, "second": 3, "operation": "/"}'
 
 # Exponentiation
-calculator 2 ^ 10
+calculator '{"first": 2, "second": 10, "operation": "^"}'
 
 # Factorial
-calculator 5!
-calculator 5 !
-```
+calculator '{"first": 5, "operation": "!"}'
+
+# Read input from a JSON file
+calculator input.json
