@@ -10,17 +10,78 @@ FetchContent_Declare(
 	GIT_TAG main
 )
 
+FetchContent_Declare(
+	json
+	GIT_REPOSITORY https://github.com/nlohmann/json
+	GIT_TAG v3.11.3
+	GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+	spdlog
+	GIT_REPOSITORY https://github.com/gabime/spdlog
+	GIT_TAG v1.17.0
+	GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+	googletest
+	GIT_REPOSITORY https://github.com/google/googletest
+	GIT_TAG v1.18.0
+	GIT_SHALLOW TRUE
+)
+
 FetchContent_MakeAvailable(SimpleMath)
+FetchContent_MakeAvailable(json)
+FetchContent_MakeAvailable(spdlog)
+FetchContent_MakeAvailable(googletest)
+
+# Main App
 
 add_executable(${PROJECT_NAME} 
 	src/main.cpp
+	src/Application.cpp
+	src/CalculatorLogger.cpp
+	src/PqDatabase.cpp
 )
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE SimpleMath)
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    SimpleMath
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+	pq
+)
 
 set_target_properties(${PROJECT_NAME}
+	PROPERTIES
+		CXX_STANDARD 17
+		CXX_STANDARD_REQUIRED ON
+)
+
+# Tests
+
+add_executable(calculator_tests
+	tests/CalculatorTests.cpp
+	src/Application.cpp
+	src/CalculatorLogger.cpp
+	src/PqDatabase.cpp
+)
+
+target_link_libraries(calculator_tests PRIVATE 
+    gmock_main
+	SimpleMath
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+	pq
+)
+
+target_include_directories(calculator_tests PRIVATE
+	src
+)
+
+set_target_properties(calculator_tests
 	PROPERTIES
 		CXX_STANDARD 17
 		CXX_STANDARD_REQUIRED ON
@@ -68,4 +129,80 @@ if(USE_CLANG_FORMAT)
     )
 
 	add_dependencies(${PROJECT_NAME} clang-format)
+endif()
+
+# CTest
+enable_testing()
+
+add_test(
+    NAME CalculatorTests_Success
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Success.*
+)
+
+add_test(
+    NAME CalculatorTests_Errors
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Errors.*
+)
+
+add_test(
+    NAME CalculatorTests_MathErrors
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_MathErrors.*
+)
+
+add_test(
+    NAME CalculatorTests_Database
+    COMMAND calculator_tests --gtest_filter=CalculatorTests_Database.*
+)
+
+find_program(VALGRIND_PATH valgrind)
+if(VALGRIND_PATH)
+add_test(
+    NAME memcheck
+    COMMAND
+    ${VALGRIND_PATH}
+    --leak-check=full
+    --show-leak-kinds=all
+    --track-origins=yes
+    --errors-for-leak-kinds=definite,indirect,possible
+    --error-exitcode=1
+    $<TARGET_FILE:calculator_tests>
+)
+
+endif()
+
+# for test with json file
+set_tests_properties(
+    CalculatorTests_Success
+    CalculatorTests_Errors
+    CalculatorTests_MathErrors
+    CalculatorTests_Database
+    PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+if(VALGRIND_PATH)
+    set_tests_properties(memcheck PROPERTIES WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endif()
+
+option(ENABLE_POSTGRES_TESTS "Run integration tests in a disposable PostgreSQL cluster" OFF)
+if(ENABLE_POSTGRES_TESTS)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    find_program(PG_CONFIG_PATH pg_config REQUIRED)
+    execute_process(COMMAND ${PG_CONFIG_PATH} --bindir OUTPUT_VARIABLE PG_BINDIR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+    find_program(INITDB_PATH initdb PATHS "${PG_BINDIR}" NO_DEFAULT_PATH REQUIRED)
+    find_program(PG_CTL_PATH pg_ctl PATHS "${PG_BINDIR}" NO_DEFAULT_PATH REQUIRED)
+    add_executable(pq_database_tests tests/PqDatabaseTests.cpp src/PqDatabase.cpp)
+    target_include_directories(pq_database_tests PRIVATE src)
+    target_link_libraries(pq_database_tests PRIVATE gtest_main pq)
+    target_compile_features(pq_database_tests PRIVATE cxx_std_17)
+    add_test(NAME PostgreSQL COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/run_postgres.py ${PG_BINDIR}
+        $<TARGET_FILE:pq_database_tests>)
+    if(VALGRIND_PATH)
+        add_test(NAME PostgreSQL_memcheck COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/tests/run_postgres.py ${PG_BINDIR}
+            ${VALGRIND_PATH} --leak-check=full --show-leak-kinds=all
+            --errors-for-leak-kinds=definite,indirect,possible --error-exitcode=1
+            $<TARGET_FILE:pq_database_tests>)
+    endif()
 endif()
